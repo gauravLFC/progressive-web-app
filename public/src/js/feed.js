@@ -24,6 +24,12 @@ function openCreatePostModal() {
   }
 }
 
+function clearCards() {
+  while (sharedMomentsArea.hasChildNodes()) {
+    sharedMomentsArea.removeChild(sharedMomentsArea.lastChild);
+  }
+}
+
 function closeCreatePostModal() {
   createPostArea.style.display = 'none';
 }
@@ -55,13 +61,36 @@ function createCard() {
   sharedMomentsArea.appendChild(cardWrapper);
 }
 
-fetch('https://httpbin.org/get')
+const url = 'https://httpbin.org/get';
+let networkDataReceived = false;
+
+fetch(url)
   .then(function (res) {
     return res.json();
   })
   .then(function (data) {
+    console.log('from web', data);
+    networkDataReceived = true;
+    clearCards();
     createCard();
   })
   .catch(function (err) {
     console.log('Some error occured', err);
   });
+
+if ('caches' in window) {
+  caches
+    .match(url)
+    .then(function (response) {
+      if (response) {
+        return response.json();
+      }
+    })
+    .then(function (data) {
+      console.log('from cache', data);
+      if (!networkDataReceived) {
+        clearCards();
+        createCard();
+      }
+    });
+}

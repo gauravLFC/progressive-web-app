@@ -1,5 +1,5 @@
-var CACHE_STATIC_NAME = 'static-v10';
-var CACHE_DYNAMIC_NAME = 'dynamic-v2';
+var CACHE_STATIC_NAME = 'static-v20';
+var CACHE_DYNAMIC_NAME = 'dynamic-v8';
 
 self.addEventListener('install', function (event) {
   console.log('[Service worker] Installing service Worker ...', event);
@@ -42,24 +42,38 @@ self.addEventListener('activate', function (event) {
 });
 
 self.addEventListener('fetch', function (event) {
-  event.respondWith(
-    caches.match(event.request).then(function (response) {
-      if (response) {
-        return response;
-      } else {
-        return fetch(event.request)
-          .then(function (res) {
-            return caches.open(CACHE_DYNAMIC_NAME).then(function (cache) {
-              cache.put(event.request.url, res.clone());
-              return res;
+  const url = 'https://httpbin.org/get';
+  if (event.request.url.indexOf(url) > -1) {
+    event.respondWith(
+      caches.open(CACHE_DYNAMIC_NAME).then(function (cache) {
+        return fetch(event.request).then(function (response) {
+          cache.put(event.request, response.clone());
+          return response;
+        });
+      })
+    );
+  } else {
+    event.respondWith(
+      caches.match(event.request).then(function (response) {
+        if (response) {
+          return response;
+        } else {
+          return fetch(event.request)
+            .then(function (res) {
+              return caches.open(CACHE_DYNAMIC_NAME).then(function (cache) {
+                cache.put(event.request.url, res.clone());
+                return res;
+              });
+            })
+            .catch(function (err) {
+              return caches.open(CACHE_STATIC_NAME).then(function (cache) {
+                if (event.request.url.indexOf('/help')) {
+                  return cache.match('/offline.html');
+                }
+              });
             });
-          })
-          .catch(function (err) {
-            return caches.open(CACHE_STATIC_NAME).then(function (cache) {
-              return cache.match('/offline.html');
-            });
-          });
-      }
-    })
-  );
+        }
+      })
+    );
+  }
 });
