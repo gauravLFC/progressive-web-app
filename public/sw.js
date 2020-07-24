@@ -1,4 +1,4 @@
-var CACHE_STATIC_NAME = 'static-v20';
+var CACHE_STATIC_NAME = 'static-v21';
 var CACHE_DYNAMIC_NAME = 'dynamic-v8';
 
 self.addEventListener('install', function (event) {
@@ -42,7 +42,7 @@ self.addEventListener('activate', function (event) {
 });
 
 self.addEventListener('fetch', function (event) {
-  const url = 'https://httpbin.org/get';
+  const url = 'https://pwagram-7a83d.firebaseio.com/posts.json';
   if (event.request.url.indexOf(url) > -1) {
     event.respondWith(
       caches.open(CACHE_DYNAMIC_NAME).then(function (cache) {
