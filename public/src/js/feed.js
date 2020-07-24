@@ -85,18 +85,11 @@ fetch(url)
     console.log('Some error occured', err);
   });
 
-if ('caches' in window) {
-  caches
-    .match(url)
-    .then(function (response) {
-      if (response) {
-        return response.json();
-      }
-    })
-    .then(function (data) {
-      console.log('from cache', data);
-      if (!networkDataReceived) {
-        updateUI(Object.values(data));
-      }
-    });
+if ('indexedDB' in window) {
+  readAllData('posts').then(function (data) {
+    if (!networkDataReceived) {
+      console.log('From Cache', data);
+      updateUI(data);
+    }
+  });
 }

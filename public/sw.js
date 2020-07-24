@@ -1,4 +1,7 @@
-var CACHE_STATIC_NAME = 'static-v21';
+importScripts('/src/js/idb.js');
+importScripts('/src/js/utility.js');
+
+var CACHE_STATIC_NAME = 'static-v24';
 var CACHE_DYNAMIC_NAME = 'dynamic-v8';
 
 self.addEventListener('install', function (event) {
@@ -11,7 +14,9 @@ self.addEventListener('install', function (event) {
         '/index.html',
         '/offline.html',
         '/src/js/app.js',
+        '/src/js/utility.js',
         '/src/js/feed.js',
+        '/src/js/idb.js',
         '/src/js/material.min.js',
         '/src/css/app.css',
         '/src/css/feed.css',
@@ -45,11 +50,17 @@ self.addEventListener('fetch', function (event) {
   const url = 'https://pwagram-7a83d.firebaseio.com/posts.json';
   if (event.request.url.indexOf(url) > -1) {
     event.respondWith(
-      caches.open(CACHE_DYNAMIC_NAME).then(function (cache) {
-        return fetch(event.request).then(function (response) {
-          cache.put(event.request, response.clone());
-          return response;
+      fetch(event.request).then(function (res) {
+        var clonedRes = res.clone();
+        clearAllData('posts').then(function () {
+          clonedRes.json().then(function (data) {
+            for (let key in data) {
+              writeData('posts', data[key]);
+            }
+          });
         });
+
+        return res;
       })
     );
   } else {
