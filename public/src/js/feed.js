@@ -4,13 +4,16 @@ var closeCreatePostModalButton = document.querySelector(
   '#close-create-post-modal-btn'
 );
 var sharedMomentsArea = document.querySelector('#shared-moments');
+var form = document.querySelector('form');
+var titleInput = document.querySelector('#title');
+var locationInput = document.querySelector('#location');
 
 function openCreatePostModal() {
   createPostArea.style.display = 'block';
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
+  if (defferedPrompt) {
+    defferedPrompt.prompt();
 
-    deferredPrompt.userChoice.then(function (choiceResult) {
+    defferedPrompt.userChoice.then(function (choiceResult) {
       console.log(choiceResult.outcome);
 
       if (choiceResult.outcome === 'dismissed') {
@@ -20,7 +23,7 @@ function openCreatePostModal() {
       }
     });
 
-    deferredPrompt = null;
+    defferedPrompt = null;
   }
 }
 
@@ -93,3 +96,59 @@ if ('indexedDB' in window) {
     }
   });
 }
+
+function sendData() {
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      id: new Date().toISOString(),
+      title: titleInput.value,
+      location: locationInput.value,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/pwagram-7a83d.appspot.com/o/sf-boat.jpg?alt=media&token=3f405cb1-bb08-4b54-90f6-f77c8e2b80b8',
+    }),
+  }).then(function (res) {
+    console.log('Sent data', res);
+    updateUI();
+  });
+}
+
+form.addEventListener('submit', function (event) {
+  console.log('Submitting form');
+  event.preventDefault();
+  console.log('titleInput.value.trim()', titleInput.value.trim());
+  console.log('locationInput.value', locationInput.value.trim());
+  if (!titleInput.value.trim() || !locationInput.value.trim()) {
+    alert('Please enter valid data');
+    return;
+  }
+  closeCreatePostModal();
+
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready.then(function (sw) {
+      var post = {
+        id: new Date().toISOString(),
+        title: titleInput.value,
+        location: locationInput.value,
+      };
+      writeData('sync-posts', post)
+        .then(function () {
+          return sw.sync.register('sync-new-post');
+        })
+        .then(function () {
+          var snackBarContainer = document.querySelector('#confirmation-toast');
+          var data = { message: 'Your Post was saved for syncing' };
+          snackBarContainer.MaterialSnackbar.showSnackbar(data);
+        })
+        .catch(function () {
+          console.log('Error');
+        });
+    });
+  } else {
+    sendData();
+  }
+});
