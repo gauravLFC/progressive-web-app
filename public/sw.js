@@ -89,7 +89,8 @@ self.addEventListener('fetch', function (event) {
   }
 });
 
-const url = 'https://pwagram-7a83d.firebaseio.com/posts.json';
+const url =
+  'https://us-central1-pwagram-7a83d.cloudfunctions.net/storePostData';
 
 self.addEventListener('sync', function (event) {
   console.log('[Service Worker] Background syncing', event);
@@ -102,7 +103,6 @@ self.addEventListener('sync', function (event) {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Accept: 'application/json',
             },
             body: JSON.stringify({
               id: dt.id,
@@ -115,14 +115,32 @@ self.addEventListener('sync', function (event) {
             .then(function (res) {
               console.log('Sent data', res);
               if (res.ok) {
-                deleteItemFromData('sync-posts', dt.id);
+                res.json().then(function (resData) {
+                  deleteItemFromData('sync-posts', resData.id);
+                });
               }
             })
-            .catch(function () {
+            .catch(function (err) {
               console.log('Error while sending data', err);
             });
         }
       })
     );
   }
+});
+
+self.addEventListener('notificationclick', function (event) {
+  var notification = event.notification;
+  var action = event.action;
+  console.log('notification', notification);
+  if (action === 'confirm') {
+    console.log('Confirm was choosen');
+  } else {
+    console.log('notification not confirmed', action);
+  }
+  notification.close();
+});
+
+self.addEventListener('notificationclose', function (event) {
+  console.log('Notification was closed', event);
 });
