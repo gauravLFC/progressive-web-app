@@ -1,7 +1,7 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
 
-var CACHE_STATIC_NAME = 'static-v35';
+var CACHE_STATIC_NAME = 'static-v50';
 var CACHE_DYNAMIC_NAME = 'dynamic-v8';
 
 self.addEventListener('install', function (event) {
@@ -99,18 +99,14 @@ self.addEventListener('sync', function (event) {
     event.waitUntil(
       readAllData('sync-posts').then(function (data) {
         for (let dt of data) {
+          var postData = new FormData();
+          postData.append('id', dt.id);
+          postData.append('title', dt.title);
+          postData.append('location', dt.location);
+          postData.append('file', dt.picture, dt.id + '.png');
           fetch(url, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id: dt.id,
-              title: dt.title,
-              location: dt.location,
-              image:
-                'https://firebasestorage.googleapis.com/v0/b/pwagram-7a83d.appspot.com/o/sf-boat.jpg?alt=media&token=3f405cb1-bb08-4b54-90f6-f77c8e2b80b8',
-            }),
+            body: postData,
           })
             .then(function (res) {
               console.log('Sent data', res);

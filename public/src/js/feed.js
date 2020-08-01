@@ -12,6 +12,7 @@ var canvasElement = document.querySelector('#canvas');
 var captureButton = document.querySelector('#capture-btn');
 var imagePicker = document.querySelector('#image-picker');
 var imagePickerArea = document.querySelector('#pick-image');
+var picture;
 
 function initializeMedia() {
   if (!('mediaDevices' in navigator)) {
@@ -39,12 +40,31 @@ function initializeMedia() {
       videoPlayer.style.display = 'block';
     })
     .catch(function (err) {
-      imagePicker.style.display = 'block';
+      imagePickerArea.style.display = 'block';
     });
 }
 
+captureButton.addEventListener('click', function (event) {
+  canvasElement.style.display = 'block';
+  videoPlayer.style.display = 'none';
+  captureButton.style.display = 'none';
+  var context = canvasElement.getContext('2d');
+  context.drawImage(
+    videoPlayer,
+    0,
+    0,
+    canvas.width,
+    videoPlayer.videoHeight / (videoPlayer.videoWidth / canvas.width)
+  );
+  videoPlayer.srcObject.getVideoTracks().forEach(function (track) {
+    track.stop();
+  });
+  picture = dataURItoBlob(canvasElement.toDataURL());
+});
+
 function openCreatePostModal() {
   createPostArea.style.display = 'block';
+  captureButton.style.display = 'block';
   initializeMedia();
   if (defferedPrompt) {
     defferedPrompt.prompt();
@@ -137,19 +157,16 @@ if ('indexedDB' in window) {
 }
 
 function sendData() {
+  var id = new Date().toISOString;
+  var postData = new FormData();
+  postData.append('id', id);
+  postData.append('title', titleInput.value);
+  postData.append('location', locationInput.value);
+  postData.append('file', picture, id + '.png');
+
   fetch('https://us-central1-pwagram-7a83d.cloudfunctions.net/storePostData', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify({
-      id: new Date().toISOString(),
-      title: titleInput.value,
-      location: locationInput.value,
-      image:
-        'https://firebasestorage.googleapis.com/v0/b/pwagram-7a83d.appspot.com/o/sf-boat.jpg?alt=media&token=3f405cb1-bb08-4b54-90f6-f77c8e2b80b8',
-    }),
+    body: postData,
   }).then(function (res) {
     console.log('Sent data', res);
     updateUI();
@@ -173,6 +190,7 @@ form.addEventListener('submit', function (event) {
         id: new Date().toISOString(),
         title: titleInput.value,
         location: locationInput.value,
+        picture: picture,
       };
       writeData('sync-posts', post)
         .then(function () {
