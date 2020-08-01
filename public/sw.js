@@ -1,7 +1,7 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
 
-var CACHE_STATIC_NAME = 'static-v24';
+var CACHE_STATIC_NAME = 'static-v35';
 var CACHE_DYNAMIC_NAME = 'dynamic-v8';
 
 self.addEventListener('install', function (event) {
